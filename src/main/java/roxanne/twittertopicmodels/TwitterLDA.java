@@ -149,62 +149,62 @@ public class TwitterLDA {
 
 			List<String> userNames = new ArrayList<String>();
 			HashMap<String, Integer> userId2Index = new HashMap<String, Integer>();
-
-			BufferedReader br = new BufferedReader(new FileReader(dataPath));
-			String line = null;
 			int nTweets = 0;
-			while ((line = br.readLine()) != null) {
 
-				JsonObject jsonTweet = (JsonObject) parser.parse(line);
+			File[] data_files = (new File(dataPath)).listFiles();
+			for (File file : data_files) {
+				BufferedReader br = new BufferedReader(new FileReader(file.getAbsolutePath()));
+				String line = null;
+				while ((line = br.readLine()) != null) {
+					JsonObject jsonTweet = (JsonObject) parser.parse(line);
+					String tweetId = jsonTweet.get("id_str").getAsString();
+					String userId = ((JsonObject) jsonTweet.get("user")).get("id").getAsString();
+					String userName = ((JsonObject) jsonTweet.get("user")).get("screen_name").getAsString();
 
-				String tweetId = jsonTweet.get("id_str").getAsString();
-				String userId = ((JsonObject) jsonTweet.get("user")).get("id").getAsString();
-				String userName = ((JsonObject) jsonTweet.get("user")).get("screen_name").getAsString();
+					String text = jsonTweet.get("text").getAsString();
 
-				String text = jsonTweet.get("text").getAsString();
+					long createdAt = tweetDateTimeFormater.parse(jsonTweet.get("created_at").getAsString()).getTime();
 
-				long createdAt = tweetDateTimeFormater.parse(jsonTweet.get("created_at").getAsString()).getTime();
+					int documentId = -1;
 
-				int documentId = -1;
-
-				if (aggregationType == TweetAggregation.PUBLISHED_TIME) {
-					documentId = getEpoch(createdAt);
-				} else if (aggregationType == TweetAggregation.AUTHOR) {
-					if (userId2Index.containsKey(userId)) {
-						documentId = userId2Index.get(userId);
+					if (aggregationType == TweetAggregation.PUBLISHED_TIME) {
+						documentId = getEpoch(createdAt);
+					} else if (aggregationType == TweetAggregation.AUTHOR) {
+						if (userId2Index.containsKey(userId)) {
+							documentId = userId2Index.get(userId);
+						} else {
+							documentId = userId2Index.size();
+							userId2Index.put(userId, documentId);
+							userNames.add(userName);
+						}
 					} else {
-						documentId = userId2Index.size();
-						userId2Index.put(userId, documentId);
-						userNames.add(userName);
+						// TO-DO: to define other ways for tweet aggregation
+						System.out.println("aggregationType = " + aggregationType + " is not defined!");
+						System.exit(-1);
 					}
-				} else {
-					// TO-DO: to define other ways for tweet aggregation
-					System.out.println("aggregationType = " + aggregationType + " is not defined!");
-					System.exit(-1);
-				}
 
-				allRawTweets.put(tweetId, text);
-				List<String> terms = preprocessingUtils.extractTermInTweet(text);
-				for (int i = 0; i < terms.size(); i++) {
-					String word = terms.get(i);
-					if (wordNTweets.containsKey(word)) {
-						wordNTweets.put(word, 1 + wordNTweets.get(word));
-					} else {
-						wordNTweets.put(word, 1);
+					allRawTweets.put(tweetId, text);
+					List<String> terms = preprocessingUtils.extractTermInTweet(text);
+					for (int i = 0; i < terms.size(); i++) {
+						String word = terms.get(i);
+						if (wordNTweets.containsKey(word)) {
+							wordNTweets.put(word, 1 + wordNTweets.get(word));
+						} else {
+							wordNTweets.put(word, 1);
+						}
 					}
+					HashMap<String, List<String>> tweets = rawDocuments.get(documentId);
+					if (tweets != null) {
+						tweets.put(tweetId, terms);
+					} else {
+						tweets = new HashMap<String, List<String>>();
+						tweets.put(tweetId, terms);
+						rawDocuments.put(documentId, tweets);
+					}
+					nTweets++;
 				}
-				HashMap<String, List<String>> tweets = rawDocuments.get(documentId);
-				if (tweets != null) {
-					tweets.put(tweetId, terms);
-				} else {
-					tweets = new HashMap<String, List<String>>();
-					tweets.put(tweetId, terms);
-					rawDocuments.put(documentId, tweets);
-				}
-				nTweets++;
+				br.close();
 			}
-			br.close();
-
 			// filter less frequent words and short tweets
 
 			HashSet<String> removedTerms = new HashSet<String>();
@@ -1323,8 +1323,8 @@ public class TwitterLDA {
 
 		new Configure();
 
-		String dataPath = "path to data file";
-		String outputPath = "path to directory to save outputs";
+		String dataPath = "C:/Users/hoangth/Downloads/input";
+		String outputPath = "C:/Users/hoangth/Downloads/output";
 		int nTopics = 10;
 		TwitterLDA twitterLDA = new TwitterLDA(dataPath, outputPath, nTopics);
 		twitterLDA.readData();

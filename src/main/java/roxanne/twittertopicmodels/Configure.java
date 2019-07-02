@@ -15,14 +15,14 @@ public class Configure {
 
 	public Configure() {
 		if (AUTHOR == Author.HOANG) {
-			WORKING_DIRECTORY = "/home/hoang/attt";
+			WORKING_DIRECTORY = "C:/code/roxanne";
 		} else {
 			// TO-DO: add authors
 			System.out.println("No author defined!");
 			System.exit(0);
 		}
 
-		Configure.STOPWORD_PATH = String.format("%s/data/stopwords", WORKING_DIRECTORY);
+		Configure.STOPWORD_PATH = String.format("%s/stopwords", WORKING_DIRECTORY);
 
 	}
 
