@@ -8,7 +8,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -849,7 +848,7 @@ public class TwitterLDA {
 		}
 	}
 
-	private void outputTweetVocabulary() {
+	private void outputVocabulary() {
 		try {
 			String fileName = outputPath + "/words.csv";
 			File file = new File(fileName);
@@ -885,9 +884,9 @@ public class TwitterLDA {
 		}
 	}
 
-	private void outputTweetTopicTopWords(int k) {
+	private void outputTopicTopWords(int k) {
 		try {
-			String fileName = outputPath + "/tweetTopicTopWords.csv";
+			String fileName = outputPath + "/topicTopWords.csv";
 			File file = new File(fileName);
 			if (!file.exists()) {
 				file.createNewFile();
@@ -949,7 +948,7 @@ public class TwitterLDA {
 		}
 	}
 
-	private void outputTweetTopicTopTweetsByPerplexity(int k) {
+	private void outputTopicTopTweetsByPerplexity(int k) {
 		int[] tweetPerTopicCount = new int[nTopics];
 		int tweetBackgroundTopicCount = 0;
 		for (int z = 0; z < nTopics; z++)
@@ -1000,7 +999,7 @@ public class TwitterLDA {
 		}
 
 		try {
-			String fileName = outputPath + "/tweetTopicTopTweetsByPerplexity.csv";
+			String fileName = outputPath + "/topicTopTweetsByPerplexity.csv";
 			File file = new File(fileName);
 			if (!file.exists()) {
 				file.createNewFile();
@@ -1059,7 +1058,7 @@ public class TwitterLDA {
 		}
 	}
 
-	private void outputTweetTopicTopTweetsSumProbUniqueWords(int k) {
+	private void outputTopicTopTweetsSumProbUniqueWords(int k) {
 		int[] tweetPerTopicCount = new int[nTopics];
 
 		for (int z = 0; z < nTopics; z++)
@@ -1098,7 +1097,7 @@ public class TwitterLDA {
 		}
 
 		try {
-			String fileName = outputPath + "/tweetTopicTopTweetsBySumProbUniqueWords.csv";
+			String fileName = outputPath + "/topicTopTweetsBySumProbUniqueWords.csv";
 			File file = new File(fileName);
 			if (!file.exists()) {
 				file.createNewFile();
@@ -1221,9 +1220,9 @@ public class TwitterLDA {
 		return representativeTweetIds;
 	}
 
-	private void outputTweetTopicRepresentativeTweets(int k) {
+	private void outputTopicRepresentativeTweets(int k) {
 		try {
-			String fileName = outputPath + "/tweetTopicRepresentativeTweets.csv";
+			String fileName = outputPath + "/topicRepresentativeTweets.csv";
 			File file = new File(fileName);
 			if (!file.exists()) {
 				file.createNewFile();
@@ -1250,23 +1249,28 @@ public class TwitterLDA {
 
 	}
 
-	private void outputEpochTopicDistribution() {
+	private void outputDocumentTopicDistribution() {
 		try {
-			String fileName = outputPath + "/epochTopics.csv";
+			String fileName = null;
+			if (aggregationType == TweetAggregation.PUBLISHED_TIME) {
+				fileName = outputPath + "/epochTopicDistributions.csv";
+			} else {
+				fileName = outputPath + "/userTopicDistributions.csv";
+			}
 			File file = new File(fileName);
 			if (!file.exists()) {
 				file.createNewFile();
 			}
 			BufferedWriter bw = new BufferedWriter(new FileWriter(file.getAbsoluteFile()));
-			for (int e = 0; e < documents.length; e++) {
-				bw.write(String.format("%d", documents[e].documentId));
+			for (int d = 0; d < documents.length; d++) {
+				bw.write(String.format("%d,%s", documents[d].documentId, documents[d].documentName));
 				for (int z = 0; z < nTopics; z++)
-					bw.write(String.format(",%f", documents[e].topicDistribution[z]));
+					bw.write(String.format(",%f", documents[d].topicDistribution[z]));
 				bw.write("\n");
 			}
 			bw.close();
 		} catch (Exception e) {
-			System.out.println("Error in writing out epoch topic distributions to file!");
+			System.out.println("Error in writing out document topic distributions to file!");
 			e.printStackTrace();
 			System.exit(0);
 		}
@@ -1296,10 +1300,10 @@ public class TwitterLDA {
 		inferTweetTopic();
 		getLikelihoodPerplexity();
 
-		outputTweetVocabulary();
+		outputVocabulary();
 		outputInferedTweetTopic();
 		outputTopicWordDistributions();
-		outputTweetTopicTopWords(20);
+		outputTopicTopWords(20);
 
 		tweetId2EpochIndex = new HashMap<String, Integer>();
 		tweetId2TweetIndex = new HashMap<String, Integer>();
@@ -1308,12 +1312,12 @@ public class TwitterLDA {
 			topicTopTweets.put(z, new ArrayList<String>());
 		}
 
-		outputTweetTopicTopTweetsSumProbUniqueWords(500);
-		outputTweetTopicTopTweetsByPerplexity(200);
+		outputTopicTopTweetsSumProbUniqueWords(500);
+		outputTopicTopTweetsByPerplexity(200);
 		// outputTweetTopicTopTweetsEntropy(200);
-		outputTweetTopicRepresentativeTweets(50);
+		outputTopicRepresentativeTweets(50);
 
-		outputEpochTopicDistribution();
+		outputDocumentTopicDistribution();
 		outputEmpiricalGlobalTopicDistribution();
 		outputLikelihood();
 		outputCoinBias();
