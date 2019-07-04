@@ -161,6 +161,7 @@ public class TwitterLDA {
 					String userName = ((JsonObject) jsonTweet.get("user")).get("screen_name").getAsString();
 
 					String text = jsonTweet.get("text").getAsString();
+					text = text.replace('\n', ' ').replace('\r', ' ');
 
 					long createdAt = tweetDateTimeFormater.parse(jsonTweet.get("created_at").getAsString()).getTime();
 
